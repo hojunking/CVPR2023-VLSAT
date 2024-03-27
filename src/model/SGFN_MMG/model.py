@@ -820,8 +820,8 @@ class Mmgnet(BaseModel):
         loss_obj_2d = F.cross_entropy(obj_logits_2d, gt_cls)
         
         ############ KD ############
-        t_loss_obj_3d = F.cross_entropy(obj_logits_3d, t_obj_logits_3d)
-        t_loss_obj_2d = F.cross_entropy(obj_logits_2d, t_obj_logits_2d)
+        t_loss_obj_3d = F.mse_loss(obj_logits_3d, t_obj_logits_3d)
+        t_loss_obj_2d = F.mse_loss(obj_logits_2d, t_obj_logits_2d)
 
          # compute loss for rel
         if self.mconfig.multi_rel_outputs:
@@ -856,7 +856,7 @@ class Mmgnet(BaseModel):
 
             ############ KD ############
             t_loss_rel_3d = F.binary_cross_entropy(rel_cls_3d,t_rel_cls_3d, weight=weight)
-            t_loss_rel_2d = F.binary_cross_entropy(rel_cls_3d,t_rel_cls_2d, weight=weight)
+            t_loss_rel_2d = F.binary_cross_entropy(rel_cls_2d,t_rel_cls_2d, weight=weight)
         else:
             if self.mconfig.WEIGHT_EDGE == 'DYNAMIC':
                 one_hot_gt_rel = torch.nn.functional.one_hot(gt_rel_cls,num_classes = self.num_rel)
@@ -885,7 +885,7 @@ class Mmgnet(BaseModel):
 
                 ############ KD ############
                 t_loss_rel_3d = F.binary_cross_entropy(rel_cls_3d, t_rel_cls_3d, weight=weight)
-                t_loss_rel_2d = F.binary_cross_entropy(rel_cls_3d, t_rel_cls_2d, weight=weight)
+                t_loss_rel_2d = F.binary_cross_entropy(rel_cls_2d, t_rel_cls_2d, weight=weight)
         
         lambda_r = 1.0
         lambda_o = self.mconfig.lambda_o
@@ -916,7 +916,7 @@ class Mmgnet(BaseModel):
         
         ############ KD ############
         t_alpha = 0.1
-        t_loss = lambda_o * t_alpha * (t_loss_obj_2d + t_loss_obj_3d) + 3 * lambda_r * (t_loss_rel_2d + t_loss_rel_3d) #+ 0.1 * (t_loss_mimic + t_rel_mimic_2d)
+        t_loss = lambda_o * (t_loss_obj_2d + t_loss_obj_3d) + 3 * lambda_r * (t_loss_rel_2d + t_loss_rel_3d) #+ 0.1 * (t_loss_mimic + t_rel_mimic_2d)
         loss = loss + t_loss
         
 

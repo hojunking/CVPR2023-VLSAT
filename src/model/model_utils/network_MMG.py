@@ -270,9 +270,9 @@ class MMG_student(torch.nn.Module):
             nn.ReLU(),
             #edit - KD
             nn.LayerNorm(32),
-            nn.Linear(32, 32),
-            nn.ReLU(),
-            nn.LayerNorm(32),
+            # nn.Linear(32, 32),
+            # nn.ReLU(),
+            # nn.LayerNorm(32),
             nn.Linear(32, num_heads)
         )
         
