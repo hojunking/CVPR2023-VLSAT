@@ -807,6 +807,8 @@ class Mmgnet(BaseModel):
             return obj_logits_3d, obj_logits_2d, rel_cls_3d, rel_cls_2d, obj_feature_3d_mimic, obj_features_2d_mimic, gcn_edge_feature_2d_dis, logit_scale
         else:
             return obj_logits_3d, obj_logits_2d, rel_cls_3d, rel_cls_2d
+    
+    
     def kd_process_train(self, teacher_model, obj_points, obj_2d_feats, gt_cls, descriptor, gt_rel_cls, edge_indices, batch_ids=None, with_log=False, ignore_none_rel=False, weights_obj=None, weights_rel=None):
         self.iteration +=1    
         
@@ -915,11 +917,7 @@ class Mmgnet(BaseModel):
         loss = lambda_o * (loss_obj_2d + loss_obj_3d) + 3 * lambda_r * (loss_rel_2d + loss_rel_3d) + 0.1 * (loss_mimic + rel_mimic_2d)
         
         ############ KD ############
-<<<<<<< HEAD
         t_alpha = 0.1
-=======
-        #t_alpha = 0.1
->>>>>>> ca2571b2ab658142308872d5d1f144ece28d7e40
         t_loss = lambda_o * (t_loss_obj_2d + t_loss_obj_3d) + 3 * lambda_r * (t_loss_rel_2d + t_loss_rel_3d) #+ 0.1 * (t_loss_mimic + t_rel_mimic_2d)
         loss = loss + t_loss
         
