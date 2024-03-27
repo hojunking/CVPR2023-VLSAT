@@ -915,7 +915,11 @@ class Mmgnet(BaseModel):
         loss = lambda_o * (loss_obj_2d + loss_obj_3d) + 3 * lambda_r * (loss_rel_2d + loss_rel_3d) + 0.1 * (loss_mimic + rel_mimic_2d)
         
         ############ KD ############
+<<<<<<< HEAD
         t_alpha = 0.1
+=======
+        #t_alpha = 0.1
+>>>>>>> ca2571b2ab658142308872d5d1f144ece28d7e40
         t_loss = lambda_o * (t_loss_obj_2d + t_loss_obj_3d) + 3 * lambda_r * (t_loss_rel_2d + t_loss_rel_3d) #+ 0.1 * (t_loss_mimic + t_rel_mimic_2d)
         loss = loss + t_loss
         
