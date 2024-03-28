@@ -14,7 +14,7 @@ from src.model.SGFN_MMG.model import Mmgnet, Mmgnet_teacher
 from src.utils import op_utils
 from src.utils.eva_utils_acc import get_mean_recall, get_zero_shot_recall
 
-
+import time
 class MMGNet():
     def __init__(self, config):
         self.config = config
@@ -66,7 +66,7 @@ class MMGNet():
         ''' Build Model '''
         self.model = Mmgnet(self.config, num_obj_class, num_rel_class).to(config.DEVICE)
         self.teacher = Mmgnet_teacher(self.config, num_obj_class, num_rel_class).to(config.DEVICE)
-        print(f'tea - {self.teacher}')
+
 
         self.samples_path = os.path.join(config.PATH, self.model_name, self.exp,  'samples')
         self.results_path = os.path.join(config.PATH, self.model_name, self.exp, 'results')
@@ -95,7 +95,9 @@ class MMGNet():
         obj_points, obj_2d_feats, gt_class, gt_rel_cls, edge_indices, descriptor, batch_ids = \
             self.cuda(obj_points, obj_2d_feats, gt_class, gt_rel_cls, edge_indices, descriptor, batch_ids)
         return obj_points, obj_2d_feats, gt_class, gt_rel_cls, edge_indices, descriptor, batch_ids
-          
+
+
+
     def train(self):
         ''' create data loader '''
         drop_last = True
@@ -112,7 +114,6 @@ class MMGNet():
         ########## KD 
         #teacher = self.teacher.load_pretrain_model(torch.load('/home/hojun/git/CVPR2023-VLSAT/checkpoints/3dssg_best_ckpt/mmg_best.pth'))
         self.teacher.load_pretrain_model("./checkpoints/3dssg_best_ckpt", is_freeze=True)
-        
         
         self.model.epoch = 1
         keep_training = True
@@ -218,11 +219,14 @@ class MMGNet():
         sub_scores_list, obj_scores_list, rel_scores_list = [], [], []
         topk_obj_2d_list, topk_rel_2d_list, topk_triplet_2d_list = np.array([]), np.array([]), np.array([])
 
-        
+        total_inference_time = 0
         for i, items in enumerate(val_loader, 0):
             ''' get data '''
             obj_points, obj_2d_feats, gt_class, gt_rel_cls, edge_indices, descriptor, batch_ids = self.data_processing_val(items)            
             
+            # Start timing
+            start_time = time.time()
+
             with torch.no_grad():
                 # if self.model.config.EVAL:
                 #     top_k_obj, top_k_rel, tok_k_triplet, cls_matrix, sub_scores, obj_scores, rel_scores \
@@ -230,7 +234,12 @@ class MMGNet():
                 # else:
                 top_k_obj, top_k_obj_2d, top_k_rel, top_k_rel_2d, tok_k_triplet, top_k_2d_triplet, cls_matrix, sub_scores, obj_scores, rel_scores \
                     = self.model.process_val(obj_points, obj_2d_feats, gt_class, descriptor, gt_rel_cls, edge_indices, batch_ids, use_triplet=True)
-                        
+            
+            # End timing
+            end_time = time.time()
+            total_inference_time += end_time - start_time
+
+
             ''' calculate metrics '''
             topk_obj_list = np.concatenate((topk_obj_list, top_k_obj))
             topk_obj_2d_list = np.concatenate((topk_obj_2d_list, top_k_obj_2d))
@@ -339,8 +348,17 @@ class MMGNet():
         print(f"Eval: 3d non-zero-shot recall@100: {non_zero_shot_recall[1]}", file=f_in)
         print(f"Eval: 3d all-zero-shot recall@50 : {all_zero_shot_recall[0]}", file=f_in)
         print(f"Eval: 3d all-zero-shot recall@100: {all_zero_shot_recall[1]}", file=f_in)
+        
 
+        average_inference_time_per_data = total_inference_time / len(val_loader)
+        # Convert seconds to hour:minute:second
+        hours, remainder = divmod(total_inference_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
 
+        # Format and print the time
+        formatted_time = "{:02}:{:02}:{:02}".format(int(hours), int(minutes), int(seconds))
+        print(f"Eval: Total inference time: {formatted_time}")
+        print(f"Average_inference_time_per_data: {average_inference_time_per_data}")
 
         if self.model.config.EVAL:
             f_in.close()
@@ -381,6 +399,8 @@ class MMGNet():
         
         self.log(logs, self.model.iteration)
         return mean_recall[0]
+        #     print(f"Total inference time: {total_inference_time}")
+        # return 0
     
     def compute_mean_predicate(self, cls_matrix_list, topk_pred_list):
         cls_dict = {}

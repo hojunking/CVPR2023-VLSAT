@@ -8,7 +8,10 @@ checkpoints/
 files/
 *.pyc
 .ipynb_checkpoints/
-config/
+config/ckp/
+config/config/
+config/logs/
+config/results/
 src/utils/eva_utils_acc.py
-utils/
+utils/define.py
 data/pointcloud2image.py
